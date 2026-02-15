@@ -1,0 +1,76 @@
+
+ python fetch_conditions.py  
+  python train_model.py  
+  python app.py
+
+- Automatic fetching of today’s wind/wave forecast
+- A database instead of CSV - done
+- A dashboard showing visibility trends - done
+- A map of dive sites - done
+- A mobile-friendly UI
+- A “log new dive” form inside the app
+
+
+You can also convert:
+- Visibility meters → feet
+- Wind direction degrees → cardinal (N, NE, E, etc.)
+- Wave period → swell energy index
+- Add tide height from a tide API
+Just tell me what you want to enhance next.
+
+
+- Add logging so you can see which dives had missing data
+- Add a “data completeness” dashboard
+- Add a retry mechanism that fetches the nearest available day
+- Switch to a different API for wind (e.g., NOAA, StormGlass)
+- Add tide height, swell direction, or moon phase
+Just tell me what direction you want to take next.
+
+
+
+Here are some natural next upgrades:
+• 	Add a site filter dropdown
+• 	Add a 7‑day moving average
+• 	Add tide height from a tide API
+• 	Add swell direction
+• 	Add a heatmap of visibility by month
+• 	Add a forecast page that predicts visibility for the next 7 days
+Just tell me which direction you want to go and I’ll build it with you.
+
+
+If you want, we can now:
+- Add site filters
+- Add a moving average
+- Add tide height to the dashboard
+- Add a forecast visibility chart
+- Make the dashboard mobile‑friendly
+Just tell me what direction you want to take next.
+
+
+Now that the map is working, you can enhance it with:
+✔ Marker colors based on visibility - done
+- Green = great
+- Yellow = okay
+- Red = poor
+
+✔ Heatmap of visibility
+Shows where conditions are consistently best.
+✔ Cluster markers
+If you log many dives at the same site.
+✔ Tide + swell arrows
+Overlay real‑time marine conditions.
+✔ Click‑to‑add new dive
+Let you drop a pin and log a dive directly from the map.
+
+
+Click‑to‑add‑dive
+(drop a pin → log a new dive)
+
+
+Edit dive location by dragging the marker
+✔ Edit dive date/time
+✔ Re-fetch conditions when date/time changes
+✔ Add photo uploads for each dive
+✔ Add a full dive-history table with filters
+✔ Add a “best dive time today” predictor
+

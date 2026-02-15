@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Visibility Dashboard</h1>
+
+<h2>Visibility Over Time</h2>
+{{ visibility_plot|safe }}
+
+<h2>Visibility vs Wave Height (ft)</h2>
+{{ wave_plot|safe }}
+
+<h2>Visibility vs Wind Speed (knots)</h2>
+{{ wind_plot|safe }}
+
+<h2>Visibility vs Tide Height</h2>
+{{ tide_plot|safe }}
+
+<h2>Tide Height Over Time</h2>
+{{ tide_plot|safe }}
+
+<h2>Visibility vs Tide Phase</h2>
+{{ phase_plot|safe }}
+
+<h2>Visibility vs Max Depth</h2>
+{{ depth_plot|safe }}
+
+<h2>Visibility vs Breath Hold</h2>
+{{ breath_plot|safe }}
+
+
+
+
+{% endblock %}

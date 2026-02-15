@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Dive Sites Map</h1>
+
+<div id="map"></div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+    #map {
+        height: 80vh;
+        width: 100%;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const iconBase = "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/";
+
+    const greenIcon = new L.Icon({
+        iconUrl: iconBase + "marker-icon-green.png",
+        shadowUrl: iconBase + "marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    const orangeIcon = new L.Icon({
+        iconUrl: iconBase + "marker-icon-orange.png",
+        shadowUrl: iconBase + "marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    const redIcon = new L.Icon({
+        iconUrl: iconBase + "marker-icon-red.png",
+        shadowUrl: iconBase + "marker-shadow.png",
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+    });
+
+    var map = L.map('map').setView([49.22, -2.13], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    var dives = {{ dives | tojson }};
+
+    dives.forEach(function(dive) {
+
+    let icon = redIcon;
+
+    if (dive.visibility_m >= 6) {
+        icon = greenIcon;
+    } else if (dive.visibility_m >= 3) {
+        icon = orangeIcon;
+    }
+
+    const popupHTML = `
+    <b>${dive.site_name}</b><br>
+    Date: ${dive.date_time}<br>
+    Visibility: ${dive.visibility_m} m<br>
+    Phase: ${dive.tide_phase ?? "N/A"}<br>
+    Max Depth: ${dive.max_depth_m ?? "N/A"} m<br>
+    Breath Hold: ${dive.breath_hold_s ?? "N/A"} s<br><br>
+
+
+    <a href="/edit_dive/${dive.id}">
+        <button style="background:#007bff;color:white;border:none;padding:5px 10px;border-radius:4px;">
+            Edit Dive
+        </button>
+    </a>
+    <br><br>
+
+    <form action="/delete_dive/${dive.id}" method="POST" onsubmit="return confirm('Delete this dive?');">
+        <button type="submit" style="background:red;color:white;border:none;padding:5px 10px;border-radius:4px;">
+            Delete Dive
+        </button>
+    </form>
+`;
+
+    L.marker([dive.lat, dive.lon], { icon: icon })
+        .addTo(map)
+        .bindPopup(popupHTML);
+});
+
+// When user clicks on the map
+map.on('click', function(e) {
+    var lat = e.latlng.lat;
+    var lon = e.latlng.lng;
+
+    var popupContent = `
+        <b>Add New Dive</b><br>
+        <form action="/add_dive" method="POST">
+            <label>Site name:</label><br>
+            <input type="text" name="site_name" value="New Site" required><br><br>
+
+            <label>Visibility (m):</label><br>
+            <input type="number" step="0.1" name="visibility" required><br><br>
+
+            <label>Notes:</label><br>
+            <textarea name="notes"></textarea><br><br>
+
+            <input type="hidden" name="lat" value="${lat}">
+            <input type="hidden" name="lon" value="${lon}">
+
+            <input type="hidden" name="max_depth_m" value="">
+            <input type="hidden" name="breath_hold_s" value="">
+
+            <button type="submit">Save Dive</button>
+        </form>
+    `;
+
+
+
+
+
+    L.popup()
+        .setLatLng(e.latlng)
+        .setContent(popupContent)
+        .openOn(map);
+    });
+
+});
+</script>
+
+{% endblock %}

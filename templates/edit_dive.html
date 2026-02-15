@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Edit Dive</h1>
+
+<form action="/update_dive/{{ dive.id }}" method="POST">
+
+    <label>Site Name:</label><br>
+    <input type="text" name="site_name" value="{{ dive.site_name }}" required><br><br>
+
+    <label>Visibility (m):</label><br>
+    <input type="number" step="0.1" name="visibility" value="{{ dive.visibility_m }}" required><br><br>
+
+    <label>Notes:</label><br>
+    <textarea name="notes">{{ dive.notes }}</textarea><br><br>
+
+    <label>Max Depth (m):</label>
+    <input type="number" step="0.1" name="max_depth_m" value="{{ dive.max_depth_m }}">
+
+    <label>Breath Hold (seconds):</label>
+    <input type="number" step="0.1" name="breath_hold_s" value="{{ dive.breath_hold_s }}">
+
+
+    <button type="submit">Save Changes</button>
+</form>
+
+{% endblock %}

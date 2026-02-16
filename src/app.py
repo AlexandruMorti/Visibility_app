@@ -1,7 +1,11 @@
+import sqlite3
 from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
 
 load_dotenv()  # take environment variables from .env.
+
+
+
 
 import json
 import uuid
@@ -27,6 +31,9 @@ try:
 except Exception:
     import database_client
 
+
+
+
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(os.path.dirname(APP_ROOT), "model")
 # Use dive visibility model (underwater) instead of atmospheric visibility
@@ -36,24 +43,26 @@ REGIONAL_MODELS = {
     "UK": os.path.join(MODEL_DIR, "dive_visibility_model.pkl"),
 }
 
-# # Simple storage for dives
-# DATA_DIR = os.path.join(os.path.dirname(APP_ROOT), "data")
-# DIVE_FILE = os.path.join(DATA_DIR, "dives.json")
-
-# app = Flask(
-#     __name__,
-#     template_folder=os.path.join(os.path.dirname(APP_ROOT), "templates"),
-#     static_folder=os.path.join(os.path.dirname(APP_ROOT), "static"),
-# )
-
+# Simple storage for dives
+DATA_DIR = os.path.join(os.path.dirname(APP_ROOT), "data")
+DIVE_FILE = os.path.join(DATA_DIR, "dives.json")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+DB_PATH = r"C:\Users\symon\Desktop\Alex Spearfishing  Diving\Visibility_app\src\visibility.db"
+conn = sqlite3.connect(DB_PATH)
+print("Connected to DB at:", DB_PATH)
+
+print("FLASK DB PATH:", os.path.abspath(DB_PATH))
+
+print("FLASK DB:", os.path.abspath("visibility.db"))
+
 app = Flask(
     __name__,
-    template_folder=os.path.join(BASE_DIR, "templates"),
-    static_folder=os.path.join(BASE_DIR, "static")
+    template_folder=os.path.join(os.path.dirname(APP_ROOT), "templates"),
+    static_folder=os.path.join(os.path.dirname(APP_ROOT), "static"),
 )
+
 
 def _ensure_data_file():
     try:

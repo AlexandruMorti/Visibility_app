@@ -1,5 +1,8 @@
 import sqlite3
 import pandas as pd
+from config import DB_PATH
+conn = sqlite3.connect(DB_PATH)
+
 
 df = pd.read_csv("dive_log.csv")
 

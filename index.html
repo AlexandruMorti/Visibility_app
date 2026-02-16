@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visibility Predictor</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0a2540 0%, #1e5a7d 50%, #2d8ba8 100%);
+        position: relative;
+        padding: 20px;
+      }
+      
+      /* Animated water effect overlay */
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+          radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.05) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 50%),
+          radial-gradient(ellipse at 20% 80%, rgba(255,255,255,0.03) 0%, transparent 50%);
+        animation: water-shimmer 8s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+      
+      @keyframes water-shimmer {
+        0%, 100% { opacity: 0.5; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.05); }
+      }
+      
+      .container {
+        position: relative;
+        max-width: 900px;
+        margin: 0 auto;
+        z-index: 1;
+      }
+      
+      /* Header */
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        animation: fadeInDown 0.8s ease-out;
+      }
+      
+      @keyframes fadeInDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      h1 {
+        font-size: 2.5rem;
+        color: white;
+        text-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .nav-links {
+        display: flex;
+        gap: 1rem;
+      }
+      
+      .nav-link {
+        padding: 0.75rem 1.5rem;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px;
+        color: white;
+        text-decoration: none;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        font-weight: 500;
+      }
+      
+      .nav-link:hover {
+        background: rgba(255,255,255,0.2);
+        transform: translateY(-2px);
+      }
+      
+      .nav-link.active {
+        background: rgba(45,139,168,0.8);
+        border-color: rgba(255,255,255,0.3);
+      }
+      
+      /* Main content card */
+      .content-card {
+        background: rgba(255,255,255,0.95);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        animation: fadeIn 1s ease-out;
+        margin-bottom: 2rem;
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      .section-title {
+        font-size: 1.5rem;
+        color: #0a2540;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+      }
+      
+      /* Form styles */
+      label {
+        display: block;
+        margin-top: 1rem;
+        font-weight: 500;
+        color: #333;
+        font-size: 0.95rem;
+      }
+      
+      input, select {
+        width: 100%;
+        padding: 0.75rem;
+        margin-top: 0.35rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+      }
+      
+      input:focus, select:focus {
+        outline: none;
+        border-color: #2d8ba8;
+        box-shadow: 0 0 0 3px rgba(45,139,168,0.1);
+      }
+      
+      input::placeholder {
+        color: #999;
+      }
+      
+      button {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #00a8e8 0%, #007ea7 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,168,232,0.3);
+        margin-top: 0.75rem;
+      }
+      
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,168,232,0.5);
+      }
+      
+      button:active {
+        transform: translateY(0);
+      }
+      
+      .preset-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        background: linear-gradient(135deg, #2d8ba8 0%, #1e5a7d 100%);
+        margin-top: 0.5rem;
+      }
+      
+      #result {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        background: #e8f5e9;
+        border-radius: 8px;
+        color: #1b5e20;
+        font-weight: 600;
+        border-left: 4px solid #4caf50;
+        animation: slideIn 0.5s ease-out;
+        display: none;
+      }
+      
+      #result:not(:empty) {
+        display: block;
+      }
+      
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-20px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      
+      .flex-group {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+      }
+      
+      .flex-group > label {
+        flex: 1;
+      }
+      
+      .info-tip {
+        font-size: 0.85rem;
+        color: #666;
+        margin: 0.5rem 0;
+        padding: 0.75rem;
+        background: #fff3cd;
+        border-radius: 8px;
+        border-left: 4px solid #ffc107;
+      }
+      
+      .info-tip.blue {
+        background: #e3f2fd;
+        border-left-color: #2196f3;
+        color: #0d47a1;
+      }
+      
+      .weather-card {
+        border: 2px solid #e0e0e0;
+        padding: 1.5rem;
+        border-radius: 12px;
+        background: #f8f9fa;
+        margin-top: 1rem;
+      }
+      
+      #weather-output {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #e3f2fd;
+        border-radius: 8px;
+        color: #0d47a1;
+        font-weight: 600;
+        border-left: 4px solid #2196f3;
+        display: none;
+      }
+      
+      #weather-output:not(:empty) {
+        display: block;
+      }
+      
+      .preset-container {
+        margin-top: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        align-items: center;
+      }
+      
+      .preset-label {
+        font-size: 0.85rem;
+        color: #666;
+        font-weight: 500;
+      }
+      
+      hr {
+        margin: 2rem 0;
+        border: none;
+        border-top: 2px solid #e0e0e0;
+      }
+      
+      /* Bubbles animation */
+      .bubble {
+        position: fixed;
+        bottom: -50px;
+        background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+        border-radius: 50%;
+        opacity: 0.6;
+        animation: rise 8s infinite ease-in;
+        z-index: 0;
+      }
+      
+      @keyframes rise {
+        0% {
+          bottom: -50px;
+          opacity: 0.6;
+        }
+        100% {
+          bottom: 110vh;
+          opacity: 0;
+        }
+      }
+      
+      .bubble:nth-child(1) { width: 30px; height: 30px; left: 10%; animation-delay: 0s; animation-duration: 8s; }
+      .bubble:nth-child(2) { width: 50px; height: 50px; left: 20%; animation-delay: 2s; animation-duration: 10s; }
+      .bubble:nth-child(3) { width: 20px; height: 20px; left: 35%; animation-delay: 4s; animation-duration: 7s; }
+      .bubble:nth-child(4) { width: 40px; height: 40px; left: 50%; animation-delay: 0s; animation-duration: 9s; }
+      .bubble:nth-child(5) { width: 25px; height: 25px; left: 65%; animation-delay: 3s; animation-duration: 8s; }
+      .bubble:nth-child(6) { width: 35px; height: 35px; left: 80%; animation-delay: 1s; animation-duration: 11s; }
+      
+      @media (max-width: 768px) {
+        h1 { font-size: 2rem; }
+        .content-card { padding: 1.5rem; }
+        .nav-links { flex-direction: column; }
+        .flex-group { flex-direction: column; align-items: stretch; }
+        button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Animated bubbles -->
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    
+    <div class="container">
+      <div class="header">
+        <h1>🔮 Visibility Predictor</h1>
+        <nav class="nav-links">
+          <a href="/" class="nav-link">🏠 Home</a>
+          <a href="/app" class="nav-link active">🔮 Predictor</a>
+          <a href="/weather_page" class="nav-link">☁️ Weather</a>
+          <a href="/dives_page" class="nav-link">📍 My Dives</a>
+        </nav>
+      </div>
+      
+      <div class="content-card">
+        <div class="section-title">
+          <span>🌊</span>
+          <span>Predict Water Visibility</span>
+        </div>
+        
+        <form id="form">
+          <label>Region
+            <select name="region">
+              <option value="GLOBAL">Global</option>
+              <option value="UK" selected>UK</option>
+            </select>
+          </label>
+          
+          <div class="flex-group">
+            <label>Latitude (optional)
+              <input name="lat" type="number" step="0.0001" placeholder="Auto-fill from Stormglass" />
+            </label>
+            <label>Longitude (optional)
+              <input name="lon" type="number" step="0.0001" placeholder="Auto-fill from Stormglass" />
+            </label>
+          </div>
+          
+          <div class="info-tip">
+            💡 <strong>Tip:</strong> Enter lat/lon to auto-fetch conditions from Stormglass. Any fields you fill will override Stormglass data.
+          </div>
+          
+          <label>Swell height (m)
+            <input name="swell_height" type="number" step="0.1" value="1.0" placeholder="Auto from Stormglass if lat/lon set" />
+          </label>
+          
+          <label>Swell period (s)
+            <input name="swell_period" type="number" step="0.1" value="10.0" placeholder="Auto from Stormglass if lat/lon set" />
+          </label>
+          
+          <label>Wind speed (knots)
+            <input name="wind_speed" type="number" step="0.1" value="6.0" placeholder="Auto from Stormglass if lat/lon set" />
+          </label>
+          
+          <label>Wind direction (deg)
+            <input name="wind_dir" type="number" step="1" value="180" placeholder="Auto from Stormglass if lat/lon set" />
+          </label>
+          
+          <label>Tide height (m)
+            <input name="tide_height" type="number" step="0.1" value="0.2" placeholder="Auto from Stormglass if lat/lon set" />
+          </label>
+          
+          <label>Turbidity (relative)
+            <input name="turbidity" type="number" step="0.1" value="1.0" placeholder="Auto-estimated if lat/lon set" />
+          </label>
+          
+          <label>Chlorophyll (mg/m³)
+            <input name="chlorophyll" type="number" step="0.1" value="0.5" placeholder="Auto from Stormglass bio if lat/lon set" />
+          </label>
+          
+          <div class="info-tip blue">
+            ℹ️ <strong>Note:</strong> Chlorophyll affects water clarity - higher values (algae blooms) reduce visibility.
+          </div>
+          
+          <button type="submit">🔮 Predict Visibility</button>
+        </form>
+        
+        <div id="result"></div>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>

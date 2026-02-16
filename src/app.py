@@ -1,10 +1,24 @@
 import sqlite3
 from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
+import stormglass_client
+from stormglass_client import get_bio_data
+import database_client
+
 
 load_dotenv()  # take environment variables from .env.
 
+from config import (
+    DB_PATH,
+    DATA_DIR,
+    DIVE_FILE,
+    MODEL_DIR,
+    GLOBAL_MODEL_PATH,
+    REGIONAL_MODELS
+)
 
+import stormglass_client
+print(">>> stormglass_client loaded from:", stormglass_client.__file__)
 
 
 import json
@@ -38,16 +52,40 @@ try:
 except Exception:
     import database_client
 
+# Load available models at startup
+models = {}
 
+print("\n=== MODEL LOADING ===")
+print("Looking for global model at:", GLOBAL_MODEL_PATH)
+
+if os.path.exists(GLOBAL_MODEL_PATH):
+    models["GLOBAL"] = joblib.load(GLOBAL_MODEL_PATH)
+    print("Loaded GLOBAL model.")
+else:
+    print("WARNING: Global model not found.")
+
+for region, path in REGIONAL_MODELS.items():
+    print(f"Checking regional model for {region}: {path}")
+    if os.path.exists(path):
+        models[region.upper()] = joblib.load(path)
+        print(f"Loaded {region.upper()} model.")
+    else:
+        print(f"WARNING: Model for region {region} not found.")
+
+# if "GLOBAL" not in models:
+#     raise RuntimeError("Model not available. Please train the model first.")
+
+from datetime import datetime, timezone
+dt = datetime.now(timezone.utc)
 
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(os.path.dirname(APP_ROOT), "model")
 # Use dive visibility model (underwater) instead of atmospheric visibility
-GLOBAL_MODEL_PATH = os.path.join(MODEL_DIR, "dive_visibility_model.pkl")
+GLOBAL_MODEL_PATH = os.path.join(MODEL_DIR, "visibility_model.pkl")
 REGIONAL_MODELS = {
     # UK model will use the global dive model if uk_dive_visibility_model.pkl doesn't exist
-    "UK": os.path.join(MODEL_DIR, "dive_visibility_model.pkl"),
+    "UK": os.path.join(MODEL_DIR, "visibility_model.pkl"),
 }
 
 # Simple storage for dives
@@ -144,12 +182,14 @@ def predict():
             lat = float(lat)
             lon = float(lon)
             # Fetch Stormglass weather/tide data for this location
-            raw_sg_data = stormglass_client.get_weather_and_tide(lat, lon)
+            raw_sg_data = stormglass_client.fetch_stormglass(lat, lon, dt)
+            if not raw_sg_data or not raw_sg_data.get("hours"):
+                return jsonify({"error": "Failed to fetch Stormglass data"}), 500
             stormglass_data = raw_sg_data["hours"][0]
             
             # Try to fetch bio/chlorophyll data
             try:
-                bio_data = stormglass_client.get_bio_data(lat, lon)
+                bio_data = stormglass_client.get_bio_data(lat, lon, dt)
                 if bio_data and bio_data.get("hours"):
                     chlorophyll_val = bio_data["hours"][0].get("chlorophyll", {}).get("sg")
                     if chlorophyll_val is not None:
@@ -356,7 +396,7 @@ def predict_stormglass():
         return jsonify({"error": "Model not found. Train the model first: see README."}), 500
 
     try:
-        raw_data = stormglass_client.get_weather_and_tide(lat, lon)
+        raw_data = stormglass_client.fetch_stormglass(lat, lon, dt)
         # First hour of data
         sg_data = raw_data["hours"][0]
 

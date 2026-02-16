@@ -45,9 +45,12 @@
 
 
 
-import sqlite3, pandas as pd
-conn = sqlite3.connect("visibility.db")
-df = pd.read_sql_query("SELECT tide_height FROM conditions", conn)
-print(df.head(20))
+# import sqlite3, pandas as pd
+# conn = sqlite3.connect("visibility.db")
+# df = pd.read_sql_query("SELECT tide_height FROM conditions", conn)
+# print(df.head(20))
 
 
+from app import app as flask_app
+
+print("Looking for templates in:", flask_app.template_folder)

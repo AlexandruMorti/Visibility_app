@@ -36,16 +36,24 @@ REGIONAL_MODELS = {
     "UK": os.path.join(MODEL_DIR, "dive_visibility_model.pkl"),
 }
 
-# Simple storage for dives
-DATA_DIR = os.path.join(os.path.dirname(APP_ROOT), "data")
-DIVE_FILE = os.path.join(DATA_DIR, "dives.json")
+# # Simple storage for dives
+# DATA_DIR = os.path.join(os.path.dirname(APP_ROOT), "data")
+# DIVE_FILE = os.path.join(DATA_DIR, "dives.json")
+
+# app = Flask(
+#     __name__,
+#     template_folder=os.path.join(os.path.dirname(APP_ROOT), "templates"),
+#     static_folder=os.path.join(os.path.dirname(APP_ROOT), "static"),
+# )
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(
     __name__,
-    template_folder=os.path.join(os.path.dirname(APP_ROOT), "templates"),
-    static_folder=os.path.join(os.path.dirname(APP_ROOT), "static"),
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static")
 )
-
 
 def _ensure_data_file():
     try:

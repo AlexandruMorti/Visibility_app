@@ -74,3 +74,4 @@ Edit dive location by dragging the marker
 ✔ Add a full dive-history table with filters
 ✔ Add a “best dive time today” predictor
 
+python src/train_model.py --data data/visibility.csv --out model/visibility_model.pkl

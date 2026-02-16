@@ -1,0 +1,15 @@
+{
+  "features": [
+    "swell_height",
+    "swell_period",
+    "wind_speed",
+    "wind_dir",
+    "tide_height",
+    "turbidity",
+    "chlorophyll"
+  ],
+  "n_samples": 5,
+  "region": null,
+  "rmse": 0.9850000000000003,
+  "r2": NaN
+}

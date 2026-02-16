@@ -1,6 +1,9 @@
 import sqlite3
 import os
 from datetime import datetime
+from config import DB_PATH
+conn = sqlite3.connect(DB_PATH)
+
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(os.path.dirname(APP_ROOT), "data", "visibility.db")

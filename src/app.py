@@ -12,6 +12,13 @@ import uuid
 from datetime import datetime
 import joblib
 import os
+import sys
+from pathlib import Path
+# Ensure local `src` directory is on sys.path so local imports work
+_SRC_DIR = str(Path(__file__).resolve().parent)
+if _SRC_DIR not in sys.path:
+    sys.path.insert(0, _SRC_DIR)
+
 import numpy as np
 from typing import Optional
 try:
@@ -49,13 +56,13 @@ DIVE_FILE = os.path.join(DATA_DIR, "dives.json")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-DB_PATH = r"C:\Users\symon\Desktop\Alex Spearfishing  Diving\Visibility_app\src\visibility.db"
-conn = sqlite3.connect(DB_PATH)
-print("Connected to DB at:", DB_PATH)
-
-print("FLASK DB PATH:", os.path.abspath(DB_PATH))
-
-print("FLASK DB:", os.path.abspath("visibility.db"))
+# Database path and initialization are managed by `database_client` and `config`.
+# Avoid creating a global sqlite connection here.
+try:
+    # ensure DB and tables exist
+    database_client.initialize_db()
+except Exception:
+    pass
 
 app = Flask(
     __name__,

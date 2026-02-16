@@ -1,12 +1,13 @@
 import sqlite3
 import os
 from datetime import datetime
-from config import DB_PATH
-conn = sqlite3.connect(DB_PATH)
+try:
+    from . import config as config
+except Exception:
+    import config as config
 
-
-APP_ROOT = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(os.path.dirname(APP_ROOT), "data", "visibility.db")
+# Use DB path from config (allow environment override)
+DB_PATH = config.DB_PATH
 
 
 def get_db_connection():
@@ -110,8 +111,7 @@ def save_stormglass_data(lat, lon, data):
         """, params)
         conn.commit()
     except sqlite3.IntegrityError:
-        # This will happen if a record for the same lat, lon, and timestamp already exists.
-        # We can ignore it.
+        # Ignore duplicate entries for the same lat/lon/timestamp
         pass
     finally:
         conn.close()
@@ -143,6 +143,7 @@ def get_latest_stormglass_data(lat, lon):
     record = cursor.fetchone()
     conn.close()
     return record
+
 
 # Initialize the database when this module is loaded
 initialize_db()

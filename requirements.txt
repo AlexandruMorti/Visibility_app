@@ -1,8 +1,7 @@
-flask
-scikit-learn
-pandas
-numpy
-joblib
-matplotlib
-requests
-python-dotenv
+Flask==2.2.5
+scikit-learn==1.3.2
+pandas==2.2.2
+numpy==1.26.2
+joblib==1.3.2
+requests==2.31.0
+python-dotenv==1.0.0

@@ -1,3 +1,49 @@
+# Visibility App (refactor)
+
+Lightweight Flask app predicting underwater visibility using pre-trained models and weather/tide data.
+
+Quick start
+
+1. Create and activate a virtual environment
+
+```bash
+python -m venv .venv
+source .venv/Scripts/activate  # Windows: .venv\\Scripts\\activate
+```
+
+2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+3. (Optional) Override default DB path with environment variable
+
+```bash
+set VISIBILITY_DB_PATH=c:\\path\\to\\data\\visibility.db  # Windows
+export VISIBILITY_DB_PATH=/path/to/data/visibility.db     # macOS/Linux
+```
+
+4. Run the app
+
+```bash
+python src/app.py
+```
+
+The app initializes the SQLite DB automatically on first import.
+
+API examples
+
+- Predict (manual):
+
+```bash
+curl -X POST http://127.0.0.1:5000/predict -H "Content-Type: application/json" -d '{"swell_height":1.0,"swell_period":10.0,"wind_speed":10.0,"wind_dir":180,"tide_height":0.0,"turbidity":1.0,"chlorophyll":0.5}'
+```
+
+Notes
+
+- Use `VISIBILITY_DB_PATH` to control where the SQLite file is stored.
+- Provide `WINDGURU_JSON_URL` or `WINDGURU_JSON_URL` env/relevant inputs for external fetch endpoints.
 Visibility Prediction App
 
 Overview

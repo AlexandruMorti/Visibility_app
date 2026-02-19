@@ -25,7 +25,7 @@ async function fetchAndRenderDives(map) {
     for (const d of dives.slice().reverse()) {
       const tr = document.createElement('tr');
       const date = d.date ? d.date.split('T')[0] : '';
-      tr.innerHTML = `<td>${date}</td><td>${d.lat.toFixed(4)}</td><td>${d.lon.toFixed(4)}</td><td>${d.depth===undefined||d.depth===null? '': d.depth}</td><td>${d.breath_hold_time===undefined||d.breath_hold_time===null? '': d.breath_hold_time}</td><td>${d.tide_height===undefined||d.tide_height===null? '': d.tide_height}</td><td>${d.visibility===undefined||d.visibility===null? '': d.visibility}</td><td>${d.water_temp===undefined||d.water_temp===null? '': d.water_temp}</td><td>${d.outside_temp===undefined||d.outside_temp===null? '': d.outside_temp}</td><td>${(d.notes||'').replace(/</g,'&lt;')}</td><td><button class="edit-dive-btn" data-dive-id="${d.id}">Edit</button></td>`;
+      tr.innerHTML = `<td>${date}</td><td>${d.lat.toFixed(4)}</td><td>${d.lon.toFixed(4)}</td><td>${d.depth===undefined||d.depth===null? '': d.depth}</td><td>${d.breath_hold_time===undefined||d.breath_hold_time===null? '': d.breath_hold_time}</td><td>${d.tide_height===undefined||d.tide_height===null? '': d.tide_height}</td><td>${d.visibility===undefined||d.visibility===null? '': d.visibility}</td><td>${d.water_temp===undefined||d.water_temp===null? '': d.water_temp}</td><td>${d.outside_temp===undefined||d.outside_temp===null? '': d.outside_temp}</td><td>${(d.notes||'').replace(/</g,'&lt;')}</td><td><button class="edit-dive-btn" data-dive-id="${d.id}">Edit</button> <button class="delete-dive-btn" data-dive-id="${d.id}">Delete</button></td>`;
       tbody.appendChild(tr);
       if (map && typeof L !== 'undefined') {
         try {
@@ -44,8 +44,12 @@ async function fetchAndRenderDives(map) {
     document.querySelectorAll('.edit-dive-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const diveId = e.target.getAttribute('data-dive-id');
-        const dive = dives.find(d => d.id === diveId);
-        if (!dive) return;
+        const dive = dives.find(d => String(d.id) === String(diveId));
+        if (!dive) {
+          alert('Dive not found. Refreshing list.');
+          await fetchAndRenderDives(map);
+          return;
+        }
         
         const date = prompt('Date (YYYY-MM-DD)', dive.date ? dive.date.split('T')[0] : '');
         if (date === null) return;
@@ -87,6 +91,26 @@ async function fetchAndRenderDives(map) {
           } else {
             const j = await r.json();
             alert('Failed to update dive: ' + (j.error || JSON.stringify(j)));
+          }
+        } catch (err) {
+          alert('Request failed: ' + err);
+        }
+      });
+    });
+
+    // Add event listeners to delete buttons
+    document.querySelectorAll('.delete-dive-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const diveId = e.target.getAttribute('data-dive-id');
+        if (!confirm('Are you sure you want to delete this dive?')) return;
+        try {
+          const r = await fetch(`/dives/${diveId}`, { method: 'DELETE' });
+          if (r.ok) {
+            await fetchAndRenderDives(map);
+            alert('Dive deleted');
+          } else {
+            const j = await r.json();
+            alert('Failed to delete dive: ' + (j.error || JSON.stringify(j)));
           }
         } catch (err) {
           alert('Request failed: ' + err);

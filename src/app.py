@@ -516,6 +516,15 @@ def update_dive(dive_id):
         return jsonify({"error": "Dive not found or no valid fields provided"}), 404
     return jsonify(updated), 200
 
+
+@app.route("/dives/<dive_id>", methods=["DELETE"])
+def delete_dive_route(dive_id):
+    """Deletes a dive by id."""
+    deleted = database_client.delete_dive(dive_id)
+    if not deleted:
+        return jsonify({"error": "Dive not found"}), 404
+    return jsonify({"status": "deleted"}), 200
+
 @app.route("/save_dive", methods=["POST"])
 def save_dive_route():
     data = request.json

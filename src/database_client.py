@@ -392,6 +392,26 @@ def save_dive(lat, lon, visibility, notes=""):
     return insert_dive(dive)
 
 
+def delete_dive(dive_id: str):
+    """Delete a dive by id. Returns True if a row was deleted, False otherwise."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        # Check existence first
+        cursor.execute('SELECT * FROM dives WHERE id = ?', (dive_id,))
+        row = cursor.fetchone()
+        if not row:
+            return False
+        cursor.execute('DELETE FROM dives WHERE id = ?', (dive_id,))
+        conn.commit()
+        return True
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
 # (get_all_dives is defined earlier and returns records as dicts)
 
 

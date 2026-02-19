@@ -110,28 +110,18 @@ app = Flask(
 
 
 def _ensure_data_file():
-    try:
-        os.makedirs(DATA_DIR, exist_ok=True)
-        if not os.path.exists(DIVE_FILE):
-            with open(DIVE_FILE, "w", encoding="utf-8") as f:
-                json.dump([], f)
-    except Exception:
-        pass
+    # No-op: dives are persisted in the SQLite DB via `database_client`.
+    return
 
 
 def load_dives():
-    _ensure_data_file()
-    try:
-        with open(DIVE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
+    # Return dives from the SQLite DB
+    return database_client.get_all_dives()
 
 
 def save_dives(dives):
-    _ensure_data_file()
-    with open(DIVE_FILE, "w", encoding="utf-8") as f:
-        json.dump(dives, f, ensure_ascii=False, indent=2)
+    # This function is kept for compatibility but writes should use `insert_dive`/`update_dive_record`.
+    raise RuntimeError("Direct JSON save disabled; use DB-backed functions instead")
 
 # Load available models at startup (global + known regional)
 models: dict[str, object] = {}
@@ -186,6 +176,8 @@ def predict():
             if not raw_sg_data or not raw_sg_data.get("hours"):
                 return jsonify({"error": "Failed to fetch Stormglass data"}), 500
             stormglass_data = raw_sg_data["hours"][0]
+            # must store the response in the database before trying to fetch bio/chlorophyll data, because the latter needs the timestamp from the former
+            database_client.save_stormglass_data(lat, lon, raw_sg_data)
             
             # Try to fetch bio/chlorophyll data
             try:
@@ -279,11 +271,16 @@ def predict():
             "wind_dir": wind_dir,
             "tide_height": tide_height,
             "turbidity": turbidity,
-            "chlorophyll": chlorophyll_val,
-        }
+            "chlorophyll": chlorophyll_val, 
+        },
+            "stormglass_coords": {
+            "lat": lat,
+            "lon": lon
+            }
     }
     
     return jsonify(response)
+
 
 
 @app.route("/predict_windguru", methods=["POST"])
@@ -487,61 +484,61 @@ def add_dive():
         "created_at": datetime.utcnow().isoformat(),
     }
 
-    dives = load_dives()
-    dives.append(dive)
-    save_dives(dives)
-    return jsonify(dive), 201
+    # Insert into SQLite DB
+    inserted = database_client.insert_dive(dive)
+    return jsonify(inserted), 201
 
 
 @app.route("/dives/<dive_id>", methods=["PUT"])
 def update_dive(dive_id):
     payload = request.get_json() or {}
-    dives = load_dives()
-    
-    # Find the dive to update
-    dive_index = None
-    for i, d in enumerate(dives):
-        if d.get("id") == dive_id:
-            dive_index = i
-            break
-    
-    if dive_index is None:
-        return jsonify({"error": "Dive not found"}), 404
-    
-    # Update fields if provided
-    dive = dives[dive_index]
+
+    # Validate optional numeric fields
+    update_fields = {}
     if "lat" in payload:
         try:
-            dive["lat"] = float(payload["lat"])
+            update_fields["lat"] = float(payload["lat"])
         except (ValueError, TypeError):
             return jsonify({"error": "Invalid lat"}), 400
     if "lon" in payload:
         try:
-            dive["lon"] = float(payload["lon"])
+            update_fields["lon"] = float(payload["lon"])
         except (ValueError, TypeError):
             return jsonify({"error": "Invalid lon"}), 400
-    if "date" in payload:
-        dive["date"] = payload["date"]
-    if "depth" in payload:
-        dive["depth"] = payload["depth"]
-    if "notes" in payload:
-        dive["notes"] = payload["notes"]
-    if "tide_height" in payload:
-        dive["tide_height"] = payload["tide_height"]
-    if "breath_hold_time" in payload:
-        dive["breath_hold_time"] = payload["breath_hold_time"]
-    if "visibility" in payload:
-        dive["visibility"] = payload["visibility"]
-    if "water_temp" in payload:
-        dive["water_temp"] = payload["water_temp"]
-    if "outside_temp" in payload:
-        dive["outside_temp"] = payload["outside_temp"]
-    
-    dive["updated_at"] = datetime.utcnow().isoformat()
-    
-    dives[dive_index] = dive
-    save_dives(dives)
-    return jsonify(dive), 200
+    for key in ("date","depth","notes","tide_height","breath_hold_time","visibility","water_temp","outside_temp"):
+        if key in payload:
+            update_fields[key] = payload[key]
+
+    update_fields["updated_at"] = datetime.utcnow().isoformat()
+
+    updated = database_client.update_dive_record(dive_id, update_fields)
+    if not updated:
+        return jsonify({"error": "Dive not found or no valid fields provided"}), 404
+    return jsonify(updated), 200
+
+@app.route("/save_dive", methods=["POST"])
+def save_dive_route():
+    data = request.json
+    lat = data.get("lat")
+    lon = data.get("lon")
+    visibility = data.get("visibility")
+    notes = data.get("notes", "")
+    dive = {
+        "id": str(uuid.uuid4()),
+        "lat": float(lat) if lat is not None else None,
+        "lon": float(lon) if lon is not None else None,
+        "date": datetime.utcnow().isoformat(),
+        "notes": notes,
+        "visibility": visibility,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    database_client.insert_dive(dive)
+    return {"status": "ok"}
+
+@app.route("/dives_data")
+def dives_data():
+    rows = database_client.get_all_dives()
+    return {"dives": rows}
 
 
 if __name__ == "__main__":

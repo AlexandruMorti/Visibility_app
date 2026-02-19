@@ -17,6 +17,7 @@
         background: linear-gradient(135deg, #0a2540 0%, #1e5a7d 50%, #2d8ba8 100%);
         position: relative;
         padding: 20px;
+        padding-bottom: 120px; /* extra space for mobile */
       }
       
       /* Animated water effect overlay */
@@ -102,11 +103,24 @@
       .content-card {
         background: rgba(255,255,255,0.95);
         border-radius: 16px;
-        padding: 2rem;
+        padding: 1.5rem;
         box-shadow: 0 8px 32px rgba(0,0,0,0.3);
         animation: fadeIn 1s ease-out;
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
       }
+
+      .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255,255,255,0.15);
+        backdrop-filter: blur(10px);
+        padding: 1rem;
+        display: flex;
+        justify-content: space-around;
+        z-index: 10;
+    }
       
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(30px); }
@@ -347,12 +361,15 @@
           
           <div class="flex-group">
             <label>Latitude (optional)
-              <input name="lat" type="number" step="0.0001" placeholder="Auto-fill from Stormglass" />
+              <input id="lat" name="lat" type="number" step="0.0001" placeholder="Auto-fill from Stormglass" />
             </label>
+
             <label>Longitude (optional)
-              <input name="lon" type="number" step="0.0001" placeholder="Auto-fill from Stormglass" />
+              <input id="lon" name="lon" type="number" step="0.0001" placeholder="Auto-fill from Stormglass" />
             </label>
+
           </div>
+          <button type="button" id="use-stormglass-btn">Use Stormglass Lat/Lon</button>
           
           <div class="info-tip">
             💡 <strong>Tip:</strong> Enter lat/lon to auto-fetch conditions from Stormglass. Any fields you fill will override Stormglass data.
@@ -391,6 +408,7 @@
           </div>
           
           <button type="submit">🔮 Predict Visibility</button>
+          <button id="save-dive-btn">💾 Save This Dive</button>
         </form>
         
         <div id="result"></div>
@@ -400,3 +418,25 @@
     <script src="/static/app.js"></script>
   </body>
 </html>
+<script>
+document.getElementById("use-stormglass-btn").addEventListener("click", function () {
+    if (window.lastPrediction && window.lastPrediction.stormglass_coords) {
+        const coords = window.lastPrediction.stormglass_coords;
+        document.getElementById("lat").value = coords.lat;
+        document.getElementById("lon").value = coords.lon;
+    } else {
+        alert("No Stormglass data available yet.");
+    }
+});
+fetch("/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+})
+.then(res => res.json())
+.then(response => {
+    window.lastPrediction = response;   // <-- store it
+    // update UI...
+});
+
+</script>

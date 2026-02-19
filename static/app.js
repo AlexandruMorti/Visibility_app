@@ -1,11 +1,77 @@
-// Prediction form handler
-document.getElementById('form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const form = e.target;
-  const data = Object.fromEntries(new FormData(form).entries());
-  
-  // Convert numeric fields; keep 'region' as string
-  const numericKeys = ['lat','lon','swell_height','swell_period','wind_speed','wind_dir','tide_height','turbidity','chlorophyll'];
+let lastPrediction = null;
+
+// Handle form submission
+document.getElementById("form").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const payload = Object.fromEntries(formData.entries());
+
+    fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    })
+    .then(res => res.json())
+    .then(response => {
+        lastPrediction = response; // store Stormglass coords
+
+        if (response.error) {
+            document.getElementById("result").innerHTML =
+                `<div class="error">${response.error}</div>`;
+            return;
+        }
+
+        document.getElementById("result").innerHTML = `
+            <h2>Predicted Visibility</h2>
+            <p><strong>${response.visibility_m.toFixed(1)} meters</strong></p>
+        `;
+    })
+    .catch(err => {
+        document.getElementById("result").innerHTML =
+            `<div class="error">Error: ${err}</div>`;
+    });
+});
+
+// Stormglass autofill button
+document.getElementById("use-stormglass-btn").addEventListener("click", function () {
+    if (!lastPrediction || !lastPrediction.stormglass_coords) {
+        alert("No Stormglass data available yet. Submit a prediction first.");
+        return;
+    }
+
+    const coords = lastPrediction.stormglass_coords;
+    document.getElementById("lat").value = coords.lat;
+    document.getElementById("lon").value = coords.lon;
+});
+
+document.getElementById("save-dive-btn").addEventListener("click", () => {
+    if (!lastPrediction) return alert("Make a prediction first.");
+
+    const payload = {
+        lat: lastPrediction.stormglass_coords.lat,
+        lon: lastPrediction.stormglass_coords.lon,
+        visibility: lastPrediction.visibility_m,
+        notes: prompt("Add notes for this dive (optional):")
+    };
+
+    fetch("/save_dive", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+    }).then(() => {
+        alert("Dive saved!");
+    });
+});
+
+
+// Handle prediction with conversion of numeric fields
+document.getElementById("form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target).entries());
+    
+    // Convert numeric fields; keep 'region' as string
+    const numericKeys = ['lat','lon','swell_height','swell_period','wind_speed','wind_dir','tide_height','turbidity','chlorophyll'];
   for (const k of numericKeys) {
     if (data[k] && data[k].trim() !== '') {
       data[k] = parseFloat(data[k]);
@@ -39,7 +105,7 @@ document.getElementById('form').addEventListener('submit', async (e) => {
     } else {
       resDiv.textContent = `Error: ${json.error || JSON.stringify(json)}`;
     }
-  } catch (err) {
-    resDiv.textContent = 'Request failed: ' + err;
-  }
-});
+    } catch (err) {
+      resDiv.textContent = 'Request failed: ' + err;
+    }
+  });

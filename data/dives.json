@@ -26,5 +26,19 @@
     "water_temp": "5",
     "outside_temp": "4",
     "created_at": "2026-02-16T13:44:10.268250"
+  },
+  {
+    "id": "033c06d4-6e74-43e1-9f31-d305f05b8493",
+    "lat": 49.043629392133155,
+    "lon": -1.7435303237289193,
+    "date": "2026-02-16",
+    "depth": "4",
+    "notes": "6",
+    "tide_height": "6",
+    "breath_hold_time": "5",
+    "visibility": "5",
+    "water_temp": "6",
+    "outside_temp": "5",
+    "created_at": "2026-02-16T20:45:36.020872"
   }
 ]

@@ -184,3 +184,24 @@ document.addEventListener('DOMContentLoaded', () => {
     if (statusEl) statusEl.textContent = 'Failed to initialize map: ' + e.message;
   }
 });
+
+fetch("/dives_data")
+    .then(res => res.json())
+    .then(data => {
+        const list = document.getElementById("dives-list");
+
+        if (data.dives.length === 0) {
+            list.innerHTML = "<p>No dives logged yet.</p>";
+            return;
+        }
+
+        list.innerHTML = data.dives.map(d => `
+            <div class="dive-entry">
+                <strong>📍 ${d.lat.toFixed(4)}, ${d.lon.toFixed(4)}</strong><br>
+                Visibility: <strong>${d.visibility} m</strong><br>
+                Date: ${new Date(d.timestamp).toLocaleString()}<br>
+                Notes: ${d.notes || "—"}
+                <hr>
+            </div>
+        `).join("");
+    });

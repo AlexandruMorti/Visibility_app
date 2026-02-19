@@ -1,3 +1,18 @@
+#DB interacitons
+
+import os
+import sqlite3
+import pandas as pd
+
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# DB_PATH = os.path.join(BASE_DIR, "visibility.db")
+# import sqlite3, pandas as pd
+conn = sqlite3.connect(r"C:\Users\symon\Desktop\Alex Spearfishing  Diving\Visibility_app\data\visibility.db")
+df = pd.read_sql_query("SELECT * FROM stormglass_data LIMIT 20", conn)
+print(df.head(20))
+# Index: []
+
+
 # import pandas as pd
 
 # df = pd.read_csv("dives_with_conditions.csv")
@@ -44,16 +59,7 @@
 # print("Done.")
 
 
-import os
-import sqlite3
-import pandas as pd
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "visibility.db")
-import sqlite3, pandas as pd
-conn = sqlite3.connect(DB_PATH)
-df = pd.read_sql_query("SELECT * FROM conditions", conn)
-print(df.head(20))
 
 
 # from app import app as flask_app

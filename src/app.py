@@ -447,6 +447,11 @@ def predict_stormglass():
 @app.route("/dives", methods=["GET"])
 def get_dives():
     dives = load_dives()
+    # Attach catches for each dive
+    for dive in dives:
+        dive_id = dive.get("id")
+        if dive_id:
+            dive["catches"] = database_client.get_catches_for_dive(dive_id)
     return jsonify(dives)
 
 
@@ -524,6 +529,45 @@ def delete_dive_route(dive_id):
     if not deleted:
         return jsonify({"error": "Dive not found"}), 404
     return jsonify({"status": "deleted"}), 200
+
+
+@app.route("/dives/<dive_id>/catches", methods=["GET", "POST"])
+def dives_catches(dive_id):
+    """Get or create catches for a dive."""
+    if request.method == "GET":
+        catches = database_client.get_catches_for_dive(dive_id)
+        return jsonify(catches)
+    
+    # POST - add a catch
+    data = request.get_json() or request.form.to_dict()
+    catch = {
+        "species": data.get("species"),
+        "length": float(data.get("length")) if data.get("length") else None,
+        "weight": float(data.get("weight")) if data.get("weight") else None,
+        "notes": data.get("notes"),
+        "created_at": datetime.utcnow().isoformat()
+    }
+    new_id = database_client.insert_catch(dive_id, catch)
+    return jsonify({"id": new_id}), 201
+
+
+@app.route("/catches/<int:catch_id>", methods=["PUT", "DELETE"])
+def catch_item(catch_id):
+    """Update or delete a catch."""
+    if request.method == "DELETE":
+        ok = database_client.delete_catch(catch_id)
+        return jsonify({"deleted": ok})
+    
+    # PUT - update catch
+    updates = request.get_json() or {}
+    for f in ("length", "weight"):
+        if f in updates and updates[f] is not None:
+            try:
+                updates[f] = float(updates[f])
+            except Exception:
+                pass
+    ok = database_client.update_catch(catch_id, updates)
+    return jsonify({"updated": ok})
 
 @app.route("/save_dive", methods=["POST"])
 def save_dive_route():

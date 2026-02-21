@@ -118,6 +118,24 @@ def initialize_db():
     conn.commit()
     conn.close()
 
+    # Create catches table (one-to-many: multiple catches per dive)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS catches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            dive_id TEXT NOT NULL,
+            species TEXT,
+            length REAL,
+            weight REAL,
+            notes TEXT,
+            created_at TEXT,
+            FOREIGN KEY(dive_id) REFERENCES dives(id) ON DELETE CASCADE
+        );
+    """)
+    conn.commit()
+    conn.close()
+
     # Attempt to migrate existing JSON dives into the DB (if present)
     try:
         migrate_dives_from_json()
@@ -410,6 +428,71 @@ def delete_dive(dive_id: str):
             conn.close()
         except Exception:
             pass
+
+
+def insert_catch(dive_id: str, catch: dict):
+    """Insert a catch for a dive. Returns the inserted catch id."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO catches (dive_id, species, length, weight, notes, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        dive_id,
+        catch.get("species"),
+        catch.get("length"),
+        catch.get("weight"),
+        catch.get("notes"),
+        catch.get("created_at") or datetime.utcnow().isoformat()
+    ))
+    conn.commit()
+    new_id = cursor.lastrowid
+    conn.close()
+    return new_id
+
+
+def get_catches_for_dive(dive_id: str):
+    """Return all catches for a given dive."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM catches WHERE dive_id = ? ORDER BY id", (dive_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [_row_to_dict(r) for r in rows]
+
+
+def update_catch(catch_id: int, updates: dict):
+    """Update a catch. Returns True if updated, False otherwise."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    allowed = {"species", "length", "weight", "notes"}
+    fields = []
+    params = []
+    for k in allowed:
+        if k in updates:
+            fields.append(f"{k} = ?")
+            params.append(updates[k])
+    if not fields:
+        conn.close()
+        return False
+    params.append(catch_id)
+    sql = f"UPDATE catches SET {', '.join(fields)} WHERE id = ?"
+    cursor.execute(sql, params)
+    conn.commit()
+    changed = cursor.rowcount > 0
+    conn.close()
+    return changed
+
+
+def delete_catch(catch_id: int):
+    """Delete a catch. Returns True if deleted, False otherwise."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM catches WHERE id = ?", (catch_id,))
+    conn.commit()
+    ok = cursor.rowcount > 0
+    conn.close()
+    return ok
 
 
 # (get_all_dives is defined earlier and returns records as dicts)

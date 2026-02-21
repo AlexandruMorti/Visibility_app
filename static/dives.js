@@ -25,7 +25,13 @@ async function fetchAndRenderDives(map) {
     for (const d of dives.slice().reverse()) {
       const tr = document.createElement('tr');
       const date = d.date ? d.date.split('T')[0] : '';
-      tr.innerHTML = `<td>${date}</td><td>${d.lat.toFixed(4)}</td><td>${d.lon.toFixed(4)}</td><td>${d.depth===undefined||d.depth===null? '': d.depth}</td><td>${d.breath_hold_time===undefined||d.breath_hold_time===null? '': d.breath_hold_time}</td><td>${d.tide_height===undefined||d.tide_height===null? '': d.tide_height}</td><td>${d.visibility===undefined||d.visibility===null? '': d.visibility}</td><td>${d.water_temp===undefined||d.water_temp===null? '': d.water_temp}</td><td>${d.outside_temp===undefined||d.outside_temp===null? '': d.outside_temp}</td><td>${(d.notes||'').replace(/</g,'&lt;')}</td><td><button class="edit-dive-btn" data-dive-id="${d.id}">Edit</button> <button class="delete-dive-btn" data-dive-id="${d.id}">Delete</button></td>`;
+      // Format catches display 
+      let catchesHtml = '';
+      if (d.catches && Array.isArray(d.catches) && d.catches.length > 0) {
+        catchesHtml = d.catches.map(c => `<div class="catch-item" data-catch-id="${c.id}"><strong>${c.species || 'Unknown'}</strong> ${c.length ? c.length + 'm' : ''} ${c.weight ? c.weight + 'kg' : ''} <button class="edit-catch-btn" data-catch-id="${c.id}">Edit</button> <button class="delete-catch-btn" data-catch-id="${c.id}">Delete</button></div>`).join('');
+      }
+      const catchesCell = `<div class="catches-container" data-dive-id="${d.id}">${catchesHtml}<button class="add-catch-btn" data-dive-id="${d.id}">+ Add Catch</button></div>`;
+      tr.innerHTML = `<td>${date}</td><td>${d.lat.toFixed(4)}</td><td>${d.lon.toFixed(4)}</td><td>${d.depth===undefined||d.depth===null? '': d.depth}</td><td>${d.breath_hold_time===undefined||d.breath_hold_time===null? '': d.breath_hold_time}</td><td>${d.tide_height===undefined||d.tide_height===null? '': d.tide_height}</td><td>${d.visibility===undefined||d.visibility===null? '': d.visibility}</td><td>${d.water_temp===undefined||d.water_temp===null? '': d.water_temp}</td><td>${d.outside_temp===undefined||d.outside_temp===null? '': d.outside_temp}</td><td>${(d.notes||'').replace(/</g,'&lt;')}</td><td>${catchesCell}</td><td><button class="edit-dive-btn" data-dive-id="${d.id}">Edit</button> <button class="delete-dive-btn" data-dive-id="${d.id}">Delete</button></td>`;
       tbody.appendChild(tr);
       if (map && typeof L !== 'undefined') {
         try {
@@ -111,6 +117,82 @@ async function fetchAndRenderDives(map) {
           } else {
             const j = await r.json();
             alert('Failed to delete dive: ' + (j.error || JSON.stringify(j)));
+          }
+        } catch (err) {
+          alert('Request failed: ' + err);
+        }
+      });
+    });
+
+    // Add catch handlers
+    document.querySelectorAll('.add-catch-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const diveId = e.target.getAttribute('data-dive-id');
+        const species = prompt('Species/type of fish:');
+        if (species === null) return;
+        const length = prompt('Length (m) - optional:');
+        const weight = prompt('Weight (kg) - optional:');
+        const notes = prompt('Notes - optional:');
+        try {
+          const r = await fetch(`/dives/${diveId}/catches`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({species, length, weight, notes})
+          });
+          if (r.ok) {
+            await fetchAndRenderDives(map);
+            alert('Catch added! 🐟');
+          } else {
+            const j = await r.json();
+            alert('Failed to add catch: ' + (j.error || JSON.stringify(j)));
+          }
+        } catch (err) {
+          alert('Request failed: ' + err);
+        }
+      });
+    });
+
+    // Edit catch
+    document.querySelectorAll('.edit-catch-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const catchId = e.target.getAttribute('data-catch-id');
+        const species = prompt('Species/type:');
+        if (species === null) return;
+        const length = prompt('Length (m) - optional:');
+        const weight = prompt('Weight (kg) - optional:');
+        const notes = prompt('Notes - optional:');
+        try {
+          const r = await fetch(`/catches/${catchId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({species, length, weight, notes})
+          });
+          if (r.ok) {
+            await fetchAndRenderDives(map);
+            alert('Catch updated! 🐟');
+          } else {
+            const j = await r.json();
+            alert('Failed to update catch: ' + (j.error || JSON.stringify(j)));
+          }
+        } catch (err) {
+          alert('Request failed: ' + err);
+        }
+      });
+    });
+
+    // Delete catch
+    document.querySelectorAll('.delete-catch-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const catchId = e.target.getAttribute('data-catch-id');
+        if (!confirm('Delete this catch?')) return;
+        try {
+          const r = await fetch(`/catches/${catchId}`, { method: 'DELETE' });
+          if (r.ok) {
+            await fetchAndRenderDives(map);
+            alert('Catch deleted');
+          } else {
+            const j = await r.json();
+            alert('Failed to delete catch: ' + (j.error || JSON.stringify(j)));
           }
         } catch (err) {
           alert('Request failed: ' + err);
